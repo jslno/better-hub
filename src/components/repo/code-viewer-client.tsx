@@ -16,6 +16,7 @@ interface CodeViewerClientProps {
   fileSize?: number;
   gutterW: number;
   className?: string;
+  hideHeader?: boolean;
 }
 
 interface SearchMatch {
@@ -40,6 +41,7 @@ export function CodeViewerClient({
   fileSize,
   gutterW,
   className,
+  hideHeader,
 }: CodeViewerClientProps) {
   const { addCodeContext } = useGlobalChat();
   const codeRef = useRef<HTMLDivElement>(null);
@@ -361,27 +363,29 @@ export function CodeViewerClient({
       >
         {/* Sticky header — file info + search bar together */}
         <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm">
-          <div className="flex items-center gap-3 px-1 py-1.5">
-            {fileSize != null && (
+          {!hideHeader && (
+            <div className="flex items-center gap-3 px-1 py-1.5">
+              {fileSize != null && (
+                <span className="text-[11px] font-mono text-muted-foreground/60">
+                  {formatBytes(fileSize)}
+                </span>
+              )}
               <span className="text-[11px] font-mono text-muted-foreground/60">
-                {formatBytes(fileSize)}
+                {lineCount} lines
               </span>
-            )}
-            <span className="text-[11px] font-mono text-muted-foreground/60">
-              {lineCount} lines
-            </span>
-            <span className="text-[11px] font-mono text-muted-foreground/60">
-              {language}
-            </span>
-            <div className="flex-1" />
-            <button
-              onClick={handleAddFileToGhost}
-              className="flex items-center gap-1.5 px-2 py-1 text-[11px] font-mono text-muted-foreground/50 hover:text-foreground transition-colors cursor-pointer rounded-md hover:bg-muted/60"
-              title="Add entire file to Ghost"
-            >
-              <Ghost className="w-3.5 h-3.5" />
-            </button>
-          </div>
+              <span className="text-[11px] font-mono text-muted-foreground/60">
+                {language}
+              </span>
+              <div className="flex-1" />
+              <button
+                onClick={handleAddFileToGhost}
+                className="flex items-center gap-1.5 px-2 py-1 text-[11px] font-mono text-muted-foreground/50 hover:text-foreground transition-colors cursor-pointer rounded-md hover:bg-muted/60"
+                title="Add entire file to Ghost"
+              >
+                <Ghost className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
 
           {searchOpen && (
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-t-md border border-b-0 border-border shadow-sm bg-background/95">
