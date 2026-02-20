@@ -14,7 +14,7 @@ import {
   updatePromptRequestProgress,
 } from "@/lib/prompt-request-store";
 
-export const maxDuration = 900;
+export const maxDuration = 800;
 
 // ─── GitHub API tools (fast path, no VM) ────────────────────────────────────
 

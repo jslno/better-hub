@@ -1,3 +1,4 @@
+import { Prisma } from "../generated/prisma/client";
 import { prisma } from "./db";
 
 export type GithubSyncJobStatus = "pending" | "running" | "failed";
@@ -86,22 +87,28 @@ export async function enqueueGithubSyncJob<TPayload>(
 ) {
   const now = new Date().toISOString();
 
-  // Use upsert to mimic INSERT OR IGNORE on the unique constraint
-  await prisma.githubSyncJob.upsert({
-    where: { userId_dedupeKey: { userId, dedupeKey } },
-    create: {
-      userId,
-      dedupeKey,
-      jobType,
-      payloadJson: JSON.stringify(payload),
-      status: "pending",
-      attempts: 0,
-      nextAttemptAt: now,
-      createdAt: now,
-      updatedAt: now,
-    },
-    update: {},
-  });
+  try {
+    await prisma.githubSyncJob.upsert({
+      where: { userId_dedupeKey: { userId, dedupeKey } },
+      create: {
+        userId,
+        dedupeKey,
+        jobType,
+        payloadJson: JSON.stringify(payload),
+        status: "pending",
+        attempts: 0,
+        nextAttemptAt: now,
+        createdAt: now,
+        updatedAt: now,
+      },
+      update: {},
+    });
+  } catch (e) {
+    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
+      return;
+    }
+    throw e;
+  }
 }
 
 async function recoverTimedOutRunningJobs(userId: string) {
