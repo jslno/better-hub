@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getSessionCookie } from "better-auth/cookies";
 
 const publicPaths = ["/", "/api/auth", "/api/inngest"];
 
@@ -10,7 +11,7 @@ export default function middleware(request: NextRequest) {
   );
   if (isPublic) return NextResponse.next();
 
-  const sessionCookie = request.cookies.get("better-auth.session_token");
+  const sessionCookie = getSessionCookie(request);
   if (!sessionCookie) {
     return NextResponse.redirect(new URL("/", request.url));
   }
