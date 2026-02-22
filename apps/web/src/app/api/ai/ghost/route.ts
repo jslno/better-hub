@@ -915,7 +915,7 @@ Only GET requests are allowed. For mutations use the dedicated tools.`,
 				}
 				try {
 					const response = await octokit.request(endpoint, {
-						...(params || {}),
+						...params,
 						per_page: (params?.per_page as number) || 20,
 					});
 					// Truncate large arrays to avoid overwhelming context
