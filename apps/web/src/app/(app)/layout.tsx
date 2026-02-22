@@ -13,14 +13,15 @@ import { redirect } from "next/navigation";
 import { OnboardingOverlay } from "@/components/onboarding/onboarding-overlay";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
+	const session = await getServerSession();
+	if (!session) return redirect("/");
+
 	const freshTabId = crypto.randomUUID();
 	const initialTabState: GhostTabState = {
 		tabs: [{ id: freshTabId, label: "New chat" }],
 		activeTabId: freshTabId,
 		counter: 1,
 	};
-	const session = await getServerSession();
-	if (!session) return redirect("/");
 
 	return (
 		<QueryProvider>

@@ -1,6 +1,8 @@
 import { getRepoPageData } from "@/lib/github";
 import { TrackView } from "@/components/shared/track-view";
 import { RepoOverview } from "@/components/repo/repo-overview";
+import { getCachedReadmeHtml } from "@/lib/readme-cache";
+import { revalidateReadme } from "./readme-actions";
 
 export default async function RepoPage({
 	params,
@@ -15,6 +17,11 @@ export default async function RepoPage({
 	const { repoData, navCounts } = pageData;
 	const { permissions } = repoData;
 	const isMaintainer = permissions.push || permissions.admin || permissions.maintain;
+
+	let readmeHtml = await getCachedReadmeHtml(owner, repo);
+	if (readmeHtml === null) {
+		readmeHtml = await revalidateReadme(owner, repo, repoData.default_branch);
+	}
 
 	return (
 		<div className={isMaintainer ? "flex flex-col flex-1 min-h-0" : undefined}>
@@ -33,6 +40,7 @@ export default async function RepoPage({
 				openPRCount={navCounts.openPrs}
 				openIssueCount={navCounts.openIssues}
 				defaultBranch={repoData.default_branch}
+				initialReadmeHtml={readmeHtml}
 			/>
 		</div>
 	);

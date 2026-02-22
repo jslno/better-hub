@@ -19,23 +19,10 @@ export async function GET(request: NextRequest) {
 
 	const fullQuery = language ? `${q} language:${language}` : q;
 
-	const [{ data }, { data: user }] = await Promise.all([
-		octokit.search.repos({
-			q: fullQuery,
-			page,
-			per_page: perPage,
-			sort: "stars",
-			order: "desc",
-		}),
-		octokit.users.getAuthenticated(),
-	]);
-
-	const login = user.login.toLowerCase();
-	data.items.sort((a, b) => {
-		const aOwned = a.owner?.login.toLowerCase() === login ? 1 : 0;
-		const bOwned = b.owner?.login.toLowerCase() === login ? 1 : 0;
-		if (aOwned !== bOwned) return bOwned - aOwned;
-		return (b.stargazers_count ?? 0) - (a.stargazers_count ?? 0);
+	const { data } = await octokit.search.repos({
+		q: fullQuery,
+		page,
+		per_page: perPage,
 	});
 
 	return NextResponse.json(data);

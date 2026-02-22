@@ -12,8 +12,8 @@ import {
 	getCachedBranches,
 	getCachedTags,
 	getCachedRepoTree,
-	setCachedRepoTree,
-} from "@/lib/repo-data-cache";
+} from "@/lib/repo-data-cache-vc";
+import { setCachedRepoTree } from "@/lib/repo-data-cache";
 import { waitUntil } from "@vercel/functions";
 
 export default async function RepoLayout({

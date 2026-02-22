@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { pinItem, unpinItem, getPinnedItemUrls, getPinnedItems, type PinnedItem } from "@/lib/pinned-items-store";
 import { revalidatePath } from "next/cache";
+import { invalidateRepoCache } from "@/lib/repo-data-cache-vc";
 
 export async function pinToOverview(
 	owner: string,
@@ -16,6 +17,7 @@ export async function pinToOverview(
 	if (!session?.user?.id) return { error: "Not authenticated" };
 
 	await pinItem(session.user.id, owner, repo, url, title, itemType);
+	invalidateRepoCache(owner, repo);
 	revalidatePath(`/repos/${owner}/${repo}`);
 	return { success: true };
 }
@@ -29,6 +31,7 @@ export async function unpinFromOverview(
 	if (!session?.user?.id) return { error: "Not authenticated" };
 
 	await unpinItem(session.user.id, owner, repo, url);
+	invalidateRepoCache(owner, repo);
 	revalidatePath(`/repos/${owner}/${repo}`);
 	return { success: true };
 }

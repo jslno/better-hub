@@ -4,6 +4,7 @@ import { getOctokit, getIssueComments, invalidateIssueCache } from "@/lib/github
 import { renderMarkdownToHtml } from "@/components/shared/markdown-renderer";
 import { getErrorMessage } from "@/lib/utils";
 import { revalidatePath } from "next/cache";
+import { invalidateRepoCache } from "@/lib/repo-data-cache-vc";
 
 export async function fetchIssueComments(
 	owner: string,
@@ -42,6 +43,7 @@ export async function addIssueComment(
 			body,
 		});
 		await invalidateIssueCache(owner, repo, issueNumber);
+		invalidateRepoCache(owner, repo);
 		revalidatePath(`/repos/${owner}/${repo}/issues/${issueNumber}`);
 		return { success: true };
 	} catch (e: unknown) {
@@ -76,6 +78,7 @@ export async function closeIssue(
 			state_reason: stateReason,
 		});
 		await invalidateIssueCache(owner, repo, issueNumber);
+		invalidateRepoCache(owner, repo);
 		revalidatePath(`/repos/${owner}/${repo}/issues/${issueNumber}`);
 		revalidatePath(`/repos/${owner}/${repo}/issues`);
 		revalidatePath(`/repos/${owner}/${repo}`, "layout");
@@ -110,6 +113,7 @@ export async function reopenIssue(
 			state: "open",
 		});
 		await invalidateIssueCache(owner, repo, issueNumber);
+		invalidateRepoCache(owner, repo);
 		revalidatePath(`/repos/${owner}/${repo}/issues/${issueNumber}`);
 		revalidatePath(`/repos/${owner}/${repo}/issues`);
 		revalidatePath(`/repos/${owner}/${repo}`, "layout");

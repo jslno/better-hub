@@ -3,6 +3,7 @@
 import { getOctokit, invalidateFileContentCache } from "@/lib/github";
 import { getErrorMessage } from "@/lib/utils";
 import { revalidatePath } from "next/cache";
+import { invalidateRepoCache } from "@/lib/repo-data-cache-vc";
 
 export async function commitFileEdit(
 	owner: string,
@@ -28,6 +29,7 @@ export async function commitFileEdit(
 		});
 
 		await invalidateFileContentCache(owner, repo, path, branch);
+		invalidateRepoCache(owner, repo);
 		revalidatePath(`/repos/${owner}/${repo}/blob`);
 
 		return { success: true, newSha: data.content?.sha };

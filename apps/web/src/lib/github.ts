@@ -4487,7 +4487,7 @@ async function fetchRepoPageDataGraphQL(
 
 export const getRepoPageData = cache(
 	async (owner: string, repo: string): Promise<RepoPageData | null> => {
-		const { getCachedRepoPageData } = await import("@/lib/repo-data-cache");
+		const { getCachedRepoPageData } = await import("@/lib/repo-data-cache-vc");
 		const cached = await getCachedRepoPageData<RepoPageData>(owner, repo);
 		if (cached) return cached;
 

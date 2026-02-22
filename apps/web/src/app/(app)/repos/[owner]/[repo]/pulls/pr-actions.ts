@@ -9,6 +9,7 @@ import {
 } from "@/lib/github";
 import { getErrorMessage } from "@/lib/utils";
 import { revalidatePath } from "next/cache";
+import { invalidateRepoCache } from "@/lib/repo-data-cache-vc";
 
 type PRMutationScope = "detail" | "list" | "layout";
 
@@ -36,6 +37,7 @@ async function revalidateAfterPRMutation(
 ) {
 	const scopes = PR_ACTION_SCOPES[action] ?? ["detail"];
 	await invalidatePullRequestCache(owner, repo, pullNumber);
+	invalidateRepoCache(owner, repo);
 	if (scopes.includes("detail")) {
 		revalidatePath(`/repos/${owner}/${repo}/pulls/${pullNumber}`);
 	}

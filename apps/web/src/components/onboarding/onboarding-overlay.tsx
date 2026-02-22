@@ -205,8 +205,7 @@ export function OnboardingOverlay({
 						</p>
 
 						<p className="text-[13px] sm:text-[14px] text-white/50 leading-[1.8] sm:leading-[1.85] mt-4 ob-fade-up-d1">
-							Welcome to Better Hub. This is built by the
-							team behind{" "}
+							Welcome to Better Hub. At {""}
 							<a
 								href="https://better-auth.com"
 								target="_blank"
@@ -215,7 +214,7 @@ export function OnboardingOverlay({
 							>
 								Better Auth
 							</a>
-							. We spend a lot of our time on GitHub, so
+							, we spend a lot of our time on GitHub, so
 							we wanted to improve our own experience.
 						</p>
 
@@ -223,9 +222,11 @@ export function OnboardingOverlay({
 							We&apos;re trying to improve everything from
 							the home page experience to repo overview,
 							PR reviews, and AI integration. Faster and
-							more pleasant overall. Still GitHub
-							underneath. On desktop, most things are
-							accessible through keyboard shortcuts.{" "}
+							more pleasant overall.
+							<br />
+							<br />
+							On desktop, most things are accessible
+							through keyboard shortcuts.{" "}
 							<kbd className="text-[11px] px-1 py-0.5 rounded-sm font-mono text-white/40">
 								⌘K
 							</kbd>{" "}
@@ -245,6 +246,10 @@ export function OnboardingOverlay({
 
 						<p className="text-[13px] sm:text-[14px] text-white/50 leading-[1.8] sm:leading-[1.85] mt-4 ob-fade-up-d4">
 							Hope you like it.
+						</p>
+
+						<p className="text-[13px] sm:text-[14px] text-white/40 mt-4 ob-fade-up-d5">
+							— Bereket
 						</p>
 
 						<button

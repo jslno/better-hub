@@ -16,10 +16,12 @@ import {
 	type PRPageResult,
 } from "@/lib/github";
 import { revalidatePath } from "next/cache";
+import { invalidateRepoCache } from "@/lib/repo-data-cache-vc";
 import { all } from "better-all";
 
 export async function refreshPullRequests(owner: string, repo: string) {
 	await invalidateRepoPullRequestsCache(owner, repo);
+	invalidateRepoCache(owner, repo);
 	revalidatePath(`/repos/${owner}/${repo}/pulls`);
 }
 

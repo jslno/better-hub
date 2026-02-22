@@ -3,6 +3,7 @@
 import { getOctokit, invalidateRepoIssuesCache } from "@/lib/github";
 import { getErrorMessage } from "@/lib/utils";
 import { revalidatePath } from "next/cache";
+import { invalidateRepoCache } from "@/lib/repo-data-cache-vc";
 
 export async function fetchIssuesByAuthor(owner: string, repo: string, author: string) {
 	const octokit = await getOctokit();
@@ -198,6 +199,7 @@ export async function createIssue(
 		});
 
 		await invalidateRepoIssuesCache(owner, repo);
+		invalidateRepoCache(owner, repo);
 		revalidatePath(`/repos/${owner}/${repo}/issues`);
 		revalidatePath(`/repos/${owner}/${repo}`, "layout");
 		return { success: true, number: data.number };

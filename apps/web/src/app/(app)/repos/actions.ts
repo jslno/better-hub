@@ -3,12 +3,14 @@
 import { getOctokit } from "@/lib/github";
 import { getErrorMessage } from "@/lib/utils";
 import { revalidatePath } from "next/cache";
+import { invalidateRepoCache } from "@/lib/repo-data-cache-vc";
 
 export async function starRepo(owner: string, repo: string) {
 	const octokit = await getOctokit();
 	if (!octokit) return { error: "Not authenticated" };
 	try {
 		await octokit.activity.starRepoForAuthenticatedUser({ owner, repo });
+		invalidateRepoCache(owner, repo);
 		revalidatePath(`/repos/${owner}/${repo}`);
 		return { success: true };
 	} catch (e: unknown) {
@@ -21,6 +23,7 @@ export async function unstarRepo(owner: string, repo: string) {
 	if (!octokit) return { error: "Not authenticated" };
 	try {
 		await octokit.activity.unstarRepoForAuthenticatedUser({ owner, repo });
+		invalidateRepoCache(owner, repo);
 		revalidatePath(`/repos/${owner}/${repo}`);
 		return { success: true };
 	} catch (e: unknown) {
