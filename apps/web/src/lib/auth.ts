@@ -9,6 +9,7 @@ import { headers } from "next/headers";
 import { cache } from "react";
 import { dash } from "@better-auth/infra";
 import { createHash } from "@better-auth/utils/hash";
+import { admin } from "better-auth/plugins";
 
 async function getOctokitUser(token: string) {
 	const cached = await redis.get<ReturnType<(typeof octokit)["users"]["getAuthenticated"]>>(
@@ -26,7 +27,14 @@ export const auth = betterAuth({
 	database: prismaAdapter(prisma, {
 		provider: "postgresql",
 	}),
-	plugins: [dash()],
+	plugins: [
+		dash({
+			activityTracking: {
+				enabled: true,
+			},
+		}),
+		admin(),
+	],
 	user: {
 		additionalFields: {
 			githubPat: {

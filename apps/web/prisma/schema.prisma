@@ -1,3 +1,4 @@
+
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -7,20 +8,25 @@ datasource db {
   provider = "postgresql"
 }
 
-
 model User {
-  id            String    @id
-  name          String
-  email         String
-  githubPat     String?
-  onboardingDone Boolean @default(false)
-  emailVerified Boolean
-  image         String?
-  createdAt     DateTime
-  updatedAt     DateTime
+  id             String   @id
+  name           String
+  email          String
+  githubPat      String?
+  onboardingDone Boolean  @default(false)
+  emailVerified  Boolean
+  image          String?
+  createdAt      DateTime
+  updatedAt      DateTime
 
   sessions Session[]
   accounts Account[]
+
+  lastActiveAt DateTime?
+  role         String?
+  banned       Boolean?  @default(false)
+  banReason    String?
+  banExpires   DateTime?
 
   @@map("user")
   @@index([githubPat, email])
@@ -37,6 +43,8 @@ model Session {
   userId    String
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  impersonatedBy String?
 
   @@map("session")
   @@index([userId, expiresAt])
@@ -75,7 +83,6 @@ model Verification {
   @@index([identifier, expiresAt])
 }
 
-
 model GithubCacheEntry {
   userId    String
   cacheKey  String
@@ -90,13 +97,13 @@ model GithubCacheEntry {
 }
 
 model GithubSyncJob {
-  id            Int      @id @default(autoincrement())
+  id            Int     @id @default(autoincrement())
   userId        String
   dedupeKey     String
   jobType       String
   payloadJson   String
-  status        String   @default("pending")
-  attempts      Int      @default(0)
+  status        String  @default("pending")
+  attempts      Int     @default(0)
   nextAttemptAt String
   startedAt     String?
   lastError     String?
@@ -109,7 +116,7 @@ model GithubSyncJob {
 }
 
 model ChatConversation {
-  id         String @id
+  id         String  @id
   userId     String
   chatType   String
   contextKey String
@@ -156,20 +163,20 @@ model GhostTabState {
 }
 
 model UserSettings {
-  userId          String  @id
-  displayName     String?
-  theme           String  @default("system")
-  colorTheme      String  @default("midnight")
-  ghostModel      String  @default("auto")
-  useOwnApiKey    Boolean @default(false)
+  userId           String  @id
+  displayName      String?
+  theme            String  @default("system")
+  colorTheme       String  @default("midnight")
+  ghostModel       String  @default("auto")
+  useOwnApiKey     Boolean @default(false)
   openrouterApiKey String?
-  githubPat       String?
-  codeThemeLight  String  @default("vitesse-light")
-  codeThemeDark   String  @default("vitesse-black")
-  codeFont        String  @default("default")
-  codeFontSize    Int     @default(13)
-  onboardingDone  Boolean @default(false)
-  updatedAt       String
+  githubPat        String?
+  codeThemeLight   String  @default("vitesse-light")
+  codeThemeDark    String  @default("vitesse-black")
+  codeFont         String  @default("default")
+  codeFontSize     Int     @default(13)
+  onboardingDone   Boolean @default(false)
+  updatedAt        String
 
   @@map("user_settings")
 }
@@ -209,28 +216,26 @@ model PromptRequest {
   @@map("prompt_requests")
 }
 
-
 model SearchEmbedding {
-  id           String  @id
-  userId       String
-  contentType  String
-  contentKey   String
-  owner        String
-  repo         String
-  itemNumber   Int
-  contentHash  String
+  id            String  @id
+  userId        String
+  contentType   String
+  contentKey    String
+  owner         String
+  repo          String
+  itemNumber    Int
+  contentHash   String
   embeddingJson String
-  title        String?
-  snippet      String
-  metadataJson String?
-  createdAt    String
-  updatedAt    String
+  title         String?
+  snippet       String
+  metadataJson  String?
+  createdAt     String
+  updatedAt     String
 
   @@index([userId, owner, repo])
   @@index([userId, contentType, contentKey])
   @@map("search_embeddings")
 }
-
 
 model PinnedItem {
   id       String @id
