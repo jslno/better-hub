@@ -1,7 +1,25 @@
 {
 	"name": "@better-hub/monorepo",
+	"description": "A better place to collaborate on code — for humans and agents",
 	"private": true,
 	"type": "module",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/better-auth/better-hub.git"
+	},
+	"homepage": "https://better-hub.com",
+	"bugs": {
+		"url": "https://github.com/better-auth/better-hub/issues"
+	},
+	"keywords": [
+		"github",
+		"code-review",
+		"pull-requests",
+		"ai-assistant",
+		"developer-tools",
+		"better-auth"
+	],
 	"scripts": {
 		"go": "pnpm run",
 		"build": "pnpm -r run build",

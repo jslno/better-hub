@@ -198,41 +198,6 @@ model CustomCodeTheme {
   @@map("custom_code_themes")
 }
 
-model PromptRequest {
-  id             String  @id
-  userId         String
-  owner          String
-  repo           String
-  title          String
-  body           String
-  status         String  @default("open")
-  prNumber       Int?
-  conversationId String?
-  errorMessage   String?
-  ghostTabId     String?
-  progress       String?
-  createdAt      String
-  updatedAt      String
-
-  @@index([owner, repo, status])
-  @@index([userId])
-  @@map("prompt_requests")
-}
-
-model PromptRequestComment {
-  id              String @id
-  promptRequestId String
-  userId          String
-  userName        String
-  userAvatarUrl   String
-  body            String
-  createdAt       String
-  updatedAt       String
-
-  @@index([promptRequestId, createdAt])
-  @@index([userId])
-  @@map("prompt_request_comments")
-}
 
 model SearchEmbedding {
   id            String  @id

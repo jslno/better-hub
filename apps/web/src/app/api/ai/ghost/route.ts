@@ -20,12 +20,6 @@ import { toAppUrl } from "@/lib/github-utils";
 import { getUserSettings } from "@/lib/user-settings-store";
 import { checkAiLimit, incrementAiUsage } from "@/lib/ai-usage";
 import {
-	createPromptRequest as createPromptRequestInDb,
-	updatePromptRequestStatus,
-	updatePromptRequestContent,
-	getPromptRequest as getPromptRequestFromDb,
-} from "@/lib/prompt-request-store";
-import {
 	invalidateIssueCache,
 	invalidatePullRequestCache,
 	invalidateRepoIssuesCache,
@@ -237,13 +231,6 @@ interface PageContext {
 // ─── Tool Factories ─────────────────────────────────────────────────────────
 
 function getGeneralTools(octokit: Octokit, pageContext?: PageContext, userId?: string) {
-	let createdPromptRequest: {
-		id: string;
-		title: string;
-		owner: string;
-		repo: string;
-		url: string;
-	} | null = null;
 	return {
 		searchRepos: tool({
 			description:
@@ -1153,110 +1140,6 @@ Only GET requests are allowed. For mutations use the dedicated tools.`,
 			},
 		}),
 
-		createPromptRequest: tool({
-			description:
-				"Create a prompt request for a repository. Use when the user wants to capture an idea, feature request, bug fix, or refactor as a prompt request. Summarize the conversation into clear, actionable instructions in the body.",
-			inputSchema: z.object({
-				owner: z.string().describe("Repository owner"),
-				repo: z.string().describe("Repository name"),
-				title: z
-					.string()
-					.describe("Short descriptive title for the prompt request"),
-				body: z
-					.string()
-					.describe(
-						"Detailed instructions for the changes. Be specific about what files to change, what logic to add, etc.",
-					),
-			}),
-			execute: async ({ owner, repo, title, body }) => {
-				if (!userId) return { error: "Not authenticated" };
-				if (createdPromptRequest) {
-					return {
-						_clientAction: "openPromptRequests" as const,
-						success: true,
-						alreadyCreated: true,
-						...createdPromptRequest,
-					};
-				}
-				const pr = await createPromptRequestInDb(
-					userId,
-					owner,
-					repo,
-					title,
-					body,
-				);
-				createdPromptRequest = {
-					id: pr.id,
-					title: pr.title,
-					owner,
-					repo,
-					url: `/${owner}/${repo}/prompts/${pr.id}`,
-				};
-				return {
-					_clientAction: "openPromptRequests" as const,
-					success: true,
-					...createdPromptRequest,
-				};
-			},
-		}),
-
-		completePromptRequest: tool({
-			description:
-				"Mark a prompt request as completed after creating a PR for it. Use after createPullRequestFromBranch when processing a prompt request.",
-			inputSchema: z.object({
-				promptRequestId: z
-					.string()
-					.describe("The prompt request ID to mark as completed"),
-				prNumber: z.number().describe("The PR number that was created"),
-			}),
-			execute: async ({ promptRequestId, prNumber }) => {
-				await updatePromptRequestStatus(promptRequestId, "completed", {
-					prNumber,
-				});
-				return {
-					_clientAction: "refreshPage" as const,
-					success: true,
-					promptRequestId,
-					prNumber,
-				};
-			},
-		}),
-
-		editPromptRequest: tool({
-			description:
-				"Edit an existing prompt request's title and/or body. Use when the user asks to update, refine, or change a prompt request they are currently viewing.",
-			inputSchema: z.object({
-				promptRequestId: z
-					.string()
-					.describe("The prompt request ID to edit"),
-				title: z
-					.string()
-					.optional()
-					.describe("New title (omit to keep current)"),
-				body: z
-					.string()
-					.optional()
-					.describe("New body/instructions (omit to keep current)"),
-			}),
-			execute: async ({ promptRequestId, title, body }) => {
-				const existing = await getPromptRequestFromDb(promptRequestId);
-				if (!existing) return { error: "Prompt request not found" };
-				if (existing.status !== "open")
-					return { error: "Can only edit open prompt requests" };
-
-				const updated = await updatePromptRequestContent(promptRequestId, {
-					...(title !== undefined ? { title } : {}),
-					...(body !== undefined ? { body } : {}),
-				});
-
-				return {
-					_clientAction: "refreshPage" as const,
-					success: true,
-					promptRequestId,
-					title: updated?.title,
-				};
-			},
-		}),
 	};
 }
 
@@ -2078,12 +1961,6 @@ ${inlineContextPrompt}
 - **ALWAYS call refreshPage** after any mutation affecting the current page.
 - **ALWAYS navigate within the app** — use navigation tools, not github.com links.
 - **NEVER say you can't perform git operations.** Use stageFile + commitChanges for multi-file commits, or the sandbox for shell-based git ops.
-
-## Prompt Requests
-- \`createPromptRequest\`: when the user says "open/create a prompt request". Summarize conversation into actionable instructions. Call exactly ONCE per request.
-- \`editPromptRequest\`: when asked to update a prompt request. Extract ID from URL if on a prompt page.
-- \`completePromptRequest\`: after creating a PR that fulfills a prompt request.
-- When processing a prompt request, use stageFile + commitChanges + createPullRequestFromBranch, then call completePromptRequest.
 
 ${MULTI_FILE_COMMIT_PROMPT}
 

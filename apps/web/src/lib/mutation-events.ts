@@ -83,14 +83,6 @@ export type RepoCreatedEvent = { type: "repo:created"; owner: string; repo: stri
 export type RepoFileCommittedEvent = { type: "repo:file-committed"; owner: string; repo: string };
 export type RepoBranchDeletedEvent = { type: "repo:branch-deleted"; owner: string; repo: string };
 
-// ── Prompt Events ─────────────────────────────────────────────
-
-export type PromptCreatedEvent = { type: "prompt:created"; owner: string; repo: string };
-export type PromptAcceptedEvent = { type: "prompt:accepted"; owner: string; repo: string };
-export type PromptRejectedEvent = { type: "prompt:rejected"; owner: string; repo: string };
-export type PromptResetEvent = { type: "prompt:reset"; owner: string; repo: string };
-export type PromptDeletedEvent = { type: "prompt:deleted"; owner: string; repo: string };
-
 // ── Pin Events ───────────────────────────────────────────────
 
 export type PinAddedEvent = {
@@ -136,11 +128,6 @@ export type MutationEvent =
 	| RepoCreatedEvent
 	| RepoFileCommittedEvent
 	| RepoBranchDeletedEvent
-	| PromptCreatedEvent
-	| PromptAcceptedEvent
-	| PromptRejectedEvent
-	| PromptResetEvent
-	| PromptDeletedEvent
 	| PinAddedEvent
 	| PinRemovedEvent
 	| SettingsUpdatedEvent

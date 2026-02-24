@@ -2339,6 +2339,13 @@ export interface PRBundleData {
 		};
 		author: { login: string; avatar_url: string } | null;
 	}[];
+	stateEvents: {
+		id: string;
+		event: "closed" | "reopened" | "merged" | "ready_for_review" | "convert_to_draft";
+		actor: { login: string; avatar_url: string } | null;
+		created_at: string;
+		merge_ref_name?: string;
+	}[];
 }
 
 const PR_BUNDLE_QUERY = `
@@ -2438,6 +2445,16 @@ const PR_BUNDLE_QUERY = `
               committer { name date }
             }
             resourcePath
+          }
+        }
+        timelineItems(first: 100, itemTypes: [CLOSED_EVENT, REOPENED_EVENT, MERGED_EVENT, READY_FOR_REVIEW_EVENT, CONVERT_TO_DRAFT_EVENT]) {
+          nodes {
+            __typename
+            ... on ClosedEvent { id createdAt actor { login avatarUrl } }
+            ... on ReopenedEvent { id createdAt actor { login avatarUrl } }
+            ... on MergedEvent { id createdAt actor { login avatarUrl } mergeRefName }
+            ... on ReadyForReviewEvent { id createdAt actor { login avatarUrl } }
+            ... on ConvertToDraftEvent { id createdAt actor { login avatarUrl } }
           }
         }
       }
@@ -2607,9 +2624,25 @@ function transformGraphQLPRBundle(node: Record<string, any>): PRBundleData {
 			author: null,
 		};
 	});
+	const typenameToEvent: Record<string, string> = {
+		ClosedEvent: "closed",
+		ReopenedEvent: "reopened",
+		MergedEvent: "merged",
+		ReadyForReviewEvent: "ready_for_review",
+		ConvertToDraftEvent: "convert_to_draft",
+	};
+	const stateEvents: PRBundleData["stateEvents"] = (node.timelineItems?.nodes ?? [])
+		.filter((n: Record<string, any>) => n && typenameToEvent[n.__typename])
+		.map((n: Record<string, any>) => ({
+			id: n.id,
+			event: typenameToEvent[n.__typename],
+			actor: n.actor ? { login: n.actor.login, avatar_url: n.actor.avatarUrl } : null,
+			created_at: n.createdAt,
+			...(n.mergeRefName ? { merge_ref_name: n.mergeRefName } : {}),
+		}));
 	/* eslint-enable @typescript-eslint/no-explicit-any */
 
-	return { pr, issueComments, reviewComments, reviews, reviewThreads, commits };
+	return { pr, issueComments, reviewComments, reviews, reviewThreads, commits, stateEvents };
 }
 
 async function fetchPRBundleFromGitHub(

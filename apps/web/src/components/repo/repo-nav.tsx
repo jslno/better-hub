@@ -133,11 +133,6 @@ export function RepoNav({
 			active: pathname.startsWith(`${base}/insights`),
 		},
 		{
-			label: "Prompts",
-			href: `${base}/prompts`,
-			active: pathname.startsWith(`${base}/prompts`),
-		},
-		{
 			label: "Settings",
 			href: `${base}/settings`,
 			active: pathname.startsWith(`${base}/settings`),

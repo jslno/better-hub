@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -16,6 +16,8 @@ import {
 	GitCommit,
 	Link2,
 	X,
+	Eye,
+	LayoutDashboard,
 } from "lucide-react";
 import { CheckStatusBadge } from "@/components/pr/check-status-badge";
 import {
@@ -998,7 +1000,59 @@ export function RepoOverview({
 		gcTime: 10 * 60 * 1000,
 	});
 
+	const [previewPublic, setPreviewPublic] = useState(false);
+
+	// Listen for cmdk toggle event
+	useEffect(() => {
+		if (!isMaintainer) return;
+		const handler = () => setPreviewPublic((v) => !v);
+		window.addEventListener("toggle-public-view", handler);
+		return () => window.removeEventListener("toggle-public-view", handler);
+	}, [isMaintainer]);
+
 	const hotItems = isMaintainer ? computeHotItems(openPRs, openIssues, base) : [];
+
+	// README data — always fetch for maintainers so the toggle is instant
+	const { data: readmeHtml } = useReadme(owner, repo, branch, initialReadmeHtml ?? null);
+
+	if (isMaintainer && previewPublic) {
+		return (
+			<div className="space-y-4 pb-4">
+				<div className="flex justify-end">
+					<button
+						type="button"
+						onClick={() => setPreviewPublic(false)}
+						className="inline-flex items-center gap-1 text-[11px] text-muted-foreground/30 hover:text-muted-foreground/60 transition-colors cursor-pointer"
+					>
+						<LayoutDashboard className="w-3 h-3" />
+						Back to dashboard
+					</button>
+				</div>
+				{readmeHtml && (
+					<div className="rounded-md border border-border/40 overflow-hidden">
+						<div className="flex items-center justify-end px-4 py-1.5 border-b border-border/30">
+							<ReadmeToolbar
+								owner={owner}
+								repo={repo}
+								branch={branch}
+								fetchMarkdown={fetchReadmeMarkdown}
+							/>
+						</div>
+						<div className="px-6 py-5">
+							<MarkdownCopyHandler>
+								<div
+									className="ghmd"
+									dangerouslySetInnerHTML={{
+										__html: readmeHtml,
+									}}
+								/>
+							</MarkdownCopyHandler>
+						</div>
+					</div>
+				)}
+			</div>
+		);
+	}
 
 	if (isMaintainer) {
 		return (
@@ -1060,11 +1114,17 @@ export function RepoOverview({
 						/>
 					)}
 				</div>
+				<button
+					type="button"
+					onClick={() => setPreviewPublic(true)}
+					className="self-end inline-flex items-center gap-1 text-[11px] text-muted-foreground/30 hover:text-muted-foreground/60 transition-colors cursor-pointer"
+				>
+					<Eye className="w-3 h-3" />
+					Preview public view
+				</button>
 			</div>
 		);
 	}
-
-	const { data: readmeHtml } = useReadme(owner, repo, branch, initialReadmeHtml ?? null);
 
 	return (
 		<div className="space-y-4 pb-4">

@@ -825,9 +825,6 @@ export function AIChat({
 		"createPullRequest",
 		"sandboxCommitAndPush",
 		"sandboxCreatePR",
-		"createPromptRequest",
-		"completePromptRequest",
-		"editPromptRequest",
 	]);
 
 	useEffect(() => {
@@ -914,13 +911,6 @@ export function AIChat({
 							);
 						} else if (action === "openUser") {
 							router.push(`/users/${output.username}`);
-						} else if (action === "openPromptRequests") {
-							const url = output.url as string;
-							if (url) router.push(url);
-							else
-								router.push(
-									`/${output.owner}/${output.repo}/prompts`,
-								);
 						} else if (action === "openUrl") {
 							const url = output.url as string;
 							if (url) window.open(url, "_blank");

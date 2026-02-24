@@ -32,7 +32,6 @@ import {
 	Activity,
 	BarChart3,
 	Play,
-	MessageSquareText,
 	Code,
 	Eye,
 	Pin,
@@ -665,6 +664,26 @@ export function CommandMenu() {
 						},
 					]
 				: []),
+			...(repoContext && pathname === `/${repoContext[0]}/${repoContext[1]}`
+				? [
+						{
+							name: "Preview Public View",
+							description: "See what visitors see (README only)",
+							keywords: [
+								"public",
+								"visitor",
+								"readme",
+								"preview",
+								"view",
+							],
+							action: () =>
+								window.dispatchEvent(
+									new CustomEvent("toggle-public-view"),
+								),
+							icon: Eye,
+						},
+					]
+				: []),
 			...(repoContext && pathname !== `/${repoContext[0]}/${repoContext[1]}`
 				? [
 						{
@@ -977,7 +996,6 @@ export function CommandMenu() {
 			{ name: "Commits", href: `${base}/commits`, icon: GitCommit },
 			{ name: "Pull Requests", href: `${base}/pulls`, icon: GitPullRequest },
 			{ name: "Issues", href: `${base}/issues`, icon: CircleDot },
-			{ name: "Prompts", href: `${base}/prompts`, icon: MessageSquareText },
 			{ name: "Actions", href: `${base}/actions`, icon: Play },
 			{ name: "Security", href: `${base}/security`, icon: Shield },
 			{ name: "Activity", href: `${base}/activity`, icon: Activity },

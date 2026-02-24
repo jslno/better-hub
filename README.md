@@ -1,62 +1,109 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+![Better Hub](readme.png)
 
-## Getting Started
+# Better Hub
 
-First, run the development server:
+Re-imagining code collaboration — a better place to collaborate on code, for humans and agents.
+
+## Why
+
+At Better Auth, we spend a lot of our time on GitHub. So we decided to build the experience we actually wanted. Better Hub improves everything from the home page to repo overview, PR reviews, and AI integration — faster and more pleasant overall.
+
+It's not a GitHub replacement (maybe in the future 👀). It's a layer on top that makes the things you do every day feel better: reviewing PRs, triaging issues, navigating code, and collaborating with your team. With keyboard-first navigation, a built-in AI assistant (Ghost), and more agnetic features.
+
+## Features
+
+- **Repo overview** — cleaner layout with README rendering, file tree, activity feed
+- **PR reviews** — inline diffs, AI-powered summaries, review comments
+- **Issue management** — triage, filter, and act on issues faster
+- **Ghost (AI assistant)** — review PRs, navigate code, triage issues, write commit messages (`⌘I` to toggle)
+- **Command center** — search repos, switch themes, navigate anywhere (`⌘K`)x
+- **CI/CD status** — view workflow runs and compare across branches
+- **Security advisories** — track vulnerabilities per repo
+- **Keyboard-first** — most actions accessible via shortcuts
+- **Chrome extension** — adds a "Open in Better Hub" button on GitHub pages
+
+## Tech Stack
+
+| Layer           | Technology                                          |
+| --------------- | --------------------------------------------------- |
+| Framework       | Next.js 16 + React 19                               |
+| Auth            | Better Auth (GitHub OAuth)                          |
+| Database        | PostgreSQL (Prisma ORM)                             |
+| Cache           | Upstash Redis                                       |
+| AI              | Vercel AI SDK, OpenRouter, Anthropic, E2B sandboxes |
+| Styling         | Tailwind CSS 4                                      |
+| Background jobs | Inngest                                             |
+| Memory          | SuperMemory                                         |
+| Search          | Mixedbread embeddings                               |
+| Package manager | pnpm (monorepo)                                     |
+
+## Quick Start
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+# Clone
+git clone https://github.com/better-auth/better-hub.git
+cd better-hub
+
+# Install dependencies
+pnpm install
+
+# Start PostgreSQL
+docker compose up -d
+
+# Set up environment
+cp apps/web/.env.example apps/web/.env
+# Edit apps/web/.env with your values
+
+# Run database migrations
+cd apps/web && npx prisma migrate dev && cd ../..
+
+# Start dev server
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Project Structure
 
-## Git Data Sync (local-first)
+```
+better-hub/
+├── apps/
+│   └── web/                  # Next.js application
+│       ├── prisma/           # Database schema & migrations
+│       └── src/
+│           ├── app/          # App router pages
+│           │   ├── (app)/    # Protected routes (dashboard, repos, PRs, issues)
+│           │   └── api/      # API routes (auth, AI, webhooks)
+│           ├── components/   # React components
+│           ├── hooks/        # Custom React hooks
+│           └── lib/          # Utilities (auth, github, redis, db)
+├── docker-compose.yml        # PostgreSQL for local dev
+├── pnpm-workspace.yaml       # Monorepo config
+└── package.json              # Root scripts (lint, fmt, typecheck)
+```
 
-The app now uses a local-first pattern for git repository data:
+## Environment Variables
 
-- Reads for repository/code data are served from local SQLite cache first.
-- GitHub remains the source of truth and async sync target.
-- Stale cache entries enqueue background sync jobs and return cached data immediately.
+See [`apps/web/.env.example`](apps/web/.env.example) for the full list with descriptions. The required variables are:
 
-Implemented local-first endpoints:
+| Variable               | Description                                    |
+| ---------------------- | ---------------------------------------------- |
+| `DATABASE_URL`         | PostgreSQL connection string                   |
+| `BETTER_AUTH_SECRET`   | 32-char random string for session encryption   |
+| `BETTER_AUTH_URL`      | App base URL (`http://localhost:3000` for dev) |
+| `GITHUB_CLIENT_ID`     | GitHub OAuth app client ID                     |
+| `GITHUB_CLIENT_SECRET` | GitHub OAuth app client secret                 |
 
-- User repositories
-- Repository metadata
-- Repository branches/tags
-- Repository tree + directory contents
-- File content + README
+## Chrome Extension
 
-SQLite tables used:
+Better Hub includes a Chrome extension that adds an "Open in Better Hub" button to GitHub pages.
 
-- `github_cache_entries`
-- `github_sync_jobs`
+See the [`apps/web/src/app/(app)/extension`](<apps/web/src/app/(app)/extension>) page in the app for installation instructions.
 
-Optional config in `.env`:
+## Contributing
 
-- `GITHUB_SYNC_DB_PATH`
-- `GITHUB_SYNC_TTL_*` values in milliseconds (see `.env.example`)
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, PR workflow, and code style guidelines.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## License
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+[MIT](LICENSE)

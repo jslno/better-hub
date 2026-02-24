@@ -26,8 +26,7 @@ import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
 import { InfiniteScrollSentinel, LoadingOverlay } from "@/components/shared/list-controls";
 import { LabelBadge } from "@/components/shared/label-badge";
 import { useGlobalChat } from "@/components/shared/global-chat-provider";
-import { SuggestPromptDialog } from "@/components/prompt-request/suggest-prompt-dialog";
-import { Sparkles, ChevronDown, FileEdit, Zap, ExternalLink, GitPullRequest } from "lucide-react";
+import { Zap, GitPullRequest } from "lucide-react";
 
 interface IssueUser {
 	login: string;
@@ -111,9 +110,6 @@ export function IssuesList({
 	const [activityFilter, setActivityFilter] = useState<ActivityFilter>("all");
 	const [selectedMilestone, setSelectedMilestone] = useState<string | null>(null);
 	const { openChat } = useGlobalChat();
-	const [promptMenuOpen, setPromptMenuOpen] = useState(false);
-	const [suggestDialogOpen, setSuggestDialogOpen] = useState(false);
-	const promptMenuRef = useRef<HTMLDivElement>(null);
 
 	const [countAdjustments, setCountAdjustments] = useState({ open: 0, closed: 0 });
 
@@ -181,10 +177,6 @@ export function IssuesList({
 	useClickOutside(
 		filtersRef,
 		useCallback(() => setFiltersOpen(false), []),
-	);
-	useClickOutside(
-		promptMenuRef,
-		useCallback(() => setPromptMenuOpen(false), []),
 	);
 
 	const labels = useMemo(() => {
@@ -813,139 +805,24 @@ export function IssuesList({
 					)}
 
 					<div className="ml-auto flex items-center gap-2">
-						<div ref={promptMenuRef} className="relative">
-							<button
-								onClick={() =>
-									setPromptMenuOpen((v) => !v)
-								}
-								className={cn(
-									"flex items-center gap-1.5 h-8 px-3 rounded-lg border text-xs font-medium transition-colors cursor-pointer",
-									promptMenuOpen
-										? "border-foreground/20 bg-muted/50 dark:bg-white/4 text-foreground"
-										: "border-border text-muted-foreground/70 hover:text-foreground hover:bg-muted/40 dark:hover:bg-white/3",
-								)}
-							>
-								<Sparkles className="w-3 h-3" />
-								Prompt
-								<ChevronDown className="w-3 h-3 opacity-50" />
-							</button>
-
-							{promptMenuOpen && (
-								<div className="absolute z-30 top-full right-0 mt-2 w-64 border border-border/60 bg-background shadow-xl rounded-xl overflow-hidden">
-									<div className="py-1">
-										<button
-											onClick={() => {
-												setPromptMenuOpen(
-													false,
-												);
-												setSuggestDialogOpen(
-													true,
-												);
-											}}
-											className="flex items-start gap-3 w-full px-3.5 py-2.5 text-left hover:bg-muted/50 dark:hover:bg-white/3 transition-colors cursor-pointer"
-										>
-											<FileEdit className="w-3.5 h-3.5 text-muted-foreground/50 shrink-0 mt-0.5" />
-											<div>
-												<span className="text-[12px] font-medium block">
-													Suggest
-													Prompt
-												</span>
-												<span className="text-[10px] text-muted-foreground/50 block mt-0.5">
-													Draft
-													a
-													request
-													&mdash;
-													runs
-													when
-													a
-													maintainer
-													accepts
-												</span>
-											</div>
-										</button>
-
-										<button
-											onClick={() => {
-												setPromptMenuOpen(
-													false,
-												);
-												openChat(
-													{
-														chatType: "general",
-														contextKey: `${owner}/${repo}`,
-														contextBody:
-															{},
-														placeholder:
-															"Describe the change you want Ghost to implement...",
-														emptyTitle: "Run Prompt with Ghost",
-														emptyDescription:
-															"Ghost will analyze the repo, make changes, and open a PR with the full conversation.",
-													},
-												);
-											}}
-											className="flex items-start gap-3 w-full px-3.5 py-2.5 text-left hover:bg-muted/50 dark:hover:bg-white/3 transition-colors cursor-pointer"
-										>
-											<Zap className="w-3.5 h-3.5 text-muted-foreground/50 shrink-0 mt-0.5" />
-											<div>
-												<span className="text-[12px] font-medium block">
-													Run
-													with
-													Ghost
-												</span>
-												<span className="text-[10px] text-muted-foreground/50 block mt-0.5">
-													AI
-													conversation
-													&rarr;
-													PR
-													with
-													full
-													context
-												</span>
-											</div>
-										</button>
-
-										<div className="h-px bg-border/30 mx-3 my-1" />
-
-										<Link
-											href={`/${owner}/${repo}/prompts`}
-											onClick={() =>
-												setPromptMenuOpen(
-													false,
-												)
-											}
-											className="flex items-start gap-3 w-full px-3.5 py-2.5 text-left hover:bg-muted/50 dark:hover:bg-white/3 transition-colors cursor-pointer"
-										>
-											<ExternalLink className="w-3.5 h-3.5 text-muted-foreground/50 shrink-0 mt-0.5" />
-											<div>
-												<span className="text-[12px] font-medium block">
-													Open
-													Prompt
-													Requests
-												</span>
-												<span className="text-[10px] text-muted-foreground/50 block mt-0.5">
-													View
-													all
-													prompt
-													requests
-													for
-													this
-													repo
-												</span>
-											</div>
-										</Link>
-									</div>
-								</div>
-							)}
-						</div>
+						<button
+							onClick={() => {
+								openChat({
+									chatType: "general",
+									contextKey: `${owner}/${repo}`,
+									contextBody: {},
+									placeholder: "Describe the change you want Ghost to implement...",
+									emptyTitle: "Run with Ghost",
+									emptyDescription: "Ghost will analyze the repo, make changes, and open a PR with the full conversation.",
+								});
+							}}
+							className="flex items-center gap-1.5 h-8 px-3 rounded-lg border text-xs font-medium transition-colors cursor-pointer border-border text-muted-foreground/70 hover:text-foreground hover:bg-muted/40 dark:hover:bg-white/3"
+						>
+							<Zap className="w-3 h-3" />
+							Run with Ghost
+						</button>
 						<CreateIssueDialog owner={owner} repo={repo} />
 					</div>
-
-					<SuggestPromptDialog
-						owner={owner}
-						repo={repo}
-						open={suggestDialogOpen}
-						onOpenChange={setSuggestDialogOpen}
-					/>
 				</div>
 
 				{/* Row 2: State tabs */}

@@ -36,7 +36,7 @@ const GHOST_WELCOME_RESPONSE = `Hey! Welcome to Better Hub. I'm Ghost, your AI a
 **Things to try first:**
 1. Open a repo and ask me about the code
 2. Hit ⌘K and explore the Command Center
-3. Check out Prompt Requests on any repo — submit a prompt and an AI agent implements it`;
+3. Hit ⌘I and try chatting with Ghost about any repo`;
 
 export function OnboardingOverlay({
 	userName,
@@ -238,13 +238,6 @@ export function OnboardingOverlay({
 						</p>
 
 						<p className="text-[13px] sm:text-[14px] text-white/50 leading-[1.8] sm:leading-[1.85] mt-4 ob-fade-up-d3">
-							We&apos;re also trying new ideas like Prompt
-							Requests, where teams and communities
-							collaborate on a prompt and the actual
-							implementation is made by an agent.
-						</p>
-
-						<p className="text-[13px] sm:text-[14px] text-white/50 leading-[1.8] sm:leading-[1.85] mt-4 ob-fade-up-d4">
 							Hope you like it.
 						</p>
 
