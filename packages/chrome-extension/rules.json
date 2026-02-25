@@ -130,19 +130,28 @@
 		"id": 26,
 		"priority": 5,
 		"action": { "type": "allow" },
-		"condition": { "urlFilter": "||github.com/sessions", "resourceTypes": ["main_frame"] }
+		"condition": {
+			"urlFilter": "||github.com/sessions",
+			"resourceTypes": ["main_frame"]
+		}
 	},
 	{
 		"id": 27,
 		"priority": 5,
 		"action": { "type": "allow" },
-		"condition": { "urlFilter": "||github.com/password_reset", "resourceTypes": ["main_frame"] }
+		"condition": {
+			"urlFilter": "||github.com/password_reset",
+			"resourceTypes": ["main_frame"]
+		}
 	},
 	{
 		"id": 28,
 		"priority": 5,
 		"action": { "type": "allow" },
-		"condition": { "urlFilter": "||github.com/account", "resourceTypes": ["main_frame"] }
+		"condition": {
+			"urlFilter": "||github.com/account",
+			"resourceTypes": ["main_frame"]
+		}
 	},
 	{
 		"id": 17,
