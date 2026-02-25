@@ -58,6 +58,7 @@ function clearTextHighlights(container: Element) {
 }
 
 function highlightTextInLine(lineEl: Element, query: string, caseSensitive: boolean) {
+	if (query === "") return;
 	const walker = document.createTreeWalker(lineEl, NodeFilter.SHOW_TEXT);
 	const textNodes: Text[] = [];
 	while (walker.nextNode()) textNodes.push(walker.currentNode as Text);
@@ -389,7 +390,7 @@ export function CodeViewerClient({
 			el.classList.remove("search-match", "search-match-active");
 		});
 
-		if (matches.length === 0 || currentMatchIdx < 0) return;
+		if (matches.length === 0 || currentMatchIdx < 0 || searchQuery === "") return;
 
 		const matchedLines = new Set(matches.map((m) => m.lineIdx));
 		for (const lineIdx of matchedLines) {
