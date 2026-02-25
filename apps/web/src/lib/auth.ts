@@ -76,6 +76,7 @@ export const auth = betterAuth({
 			maxAge: 60 * 60 * 24 * 7,
 		},
 	},
+	trustedOrigins: ["https://www.better-hub.com"],
 });
 
 export const getServerSession = cache(async () => {
