@@ -4,7 +4,7 @@ import { GlobalChatProvider } from "@/components/shared/global-chat-provider";
 import { GlobalChatPanel } from "@/components/shared/global-chat-panel";
 import { NavigationProgress } from "@/components/shared/navigation-progress";
 import { getServerSession } from "@/lib/auth";
-import { getNotifications } from "@/lib/github";
+import { getNotifications, checkIsStarred } from "@/lib/github";
 import { type GhostTabState } from "@/lib/chat-store";
 import type { NotificationItem } from "@/lib/github-types";
 import { ColorThemeProvider } from "@/components/theme/theme-provider";
@@ -25,6 +25,14 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 	}
 
 	const notifications = (await getNotifications(20)) as NotificationItem[];
+
+	const onboardingDone = session?.user?.onboardingDone ?? false;
+	const [initialStarredAuth, initialStarredHub] = onboardingDone
+		? [false, false]
+		: await Promise.all([
+				checkIsStarred("better-auth", "better-auth"),
+				checkIsStarred("better-auth", "better-hub"),
+			]);
 
 	const freshTabId = crypto.randomUUID();
 	const initialTabState: GhostTabState = {
@@ -81,11 +89,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 									session?.githubUser
 										?.created_at || ""
 								}
-								onboardingDone={
-									session?.user
-										?.onboardingDone ??
-									false
-								}
+								onboardingDone={onboardingDone}
+								initialStarredAuth={initialStarredAuth}
+								initialStarredHub={initialStarredHub}
 							/>
 						</GitHubLinkInterceptor>
 					</CodeThemeProvider>

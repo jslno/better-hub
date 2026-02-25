@@ -184,6 +184,32 @@ export class GitHubRateLimitError extends Error {
 	}
 }
 
+// --- OAuth App Access Restriction Error ---
+
+export class GitHubOAuthRestrictedError extends Error {
+	readonly digest: string;
+	readonly org: string;
+
+	constructor(org: string) {
+		super(
+			`The ${org} organization has enabled OAuth App access restrictions. An organization admin needs to approve this app.`,
+		);
+		this.name = "GitHubOAuthRestrictedError";
+		this.org = org;
+		this.digest = `GITHUB_OAUTH_RESTRICTED:${org}`;
+	}
+}
+
+function isOAuthRestrictionError(error: unknown): string | null {
+	if (typeof error !== "object" || error === null) return null;
+	const status = (error as { status?: number }).status;
+	if (status !== 403) return null;
+	const message = (error as { message?: string }).message ?? "";
+	if (!message.includes("OAuth App access restrictions")) return null;
+	const match = message.match(/the `([^`]+)` organization/i);
+	return match?.[1] ?? "this";
+}
+
 function isOctokitNotFound(error: unknown): boolean {
 	if (typeof error !== "object" || error === null) return false;
 	const status = (error as { status?: number }).status;
@@ -212,6 +238,17 @@ function isRateLimitError(error: unknown): { resetAt: number; limit: number; use
 		limit,
 		used: limit - remaining,
 	};
+}
+
+/**
+ * Rethrows known GitHub API errors (rate limit, OAuth restriction) as typed errors.
+ * Should be called in catch blocks for Octokit REST calls.
+ */
+function rethrowKnownGitHubErrors(error: unknown): void {
+	const rl = isRateLimitError(error);
+	if (rl) throw new GitHubRateLimitError(rl.resetAt, rl.limit, rl.used);
+	const org = isOAuthRestrictionError(error);
+	if (org) throw new GitHubOAuthRestrictedError(org);
 }
 
 function normalizeRef(ref?: string): string {
@@ -1808,8 +1845,7 @@ async function readLocalFirstGitData<T>({
 		}
 		return data;
 	} catch (error) {
-		const rl = isRateLimitError(error);
-		if (rl) throw new GitHubRateLimitError(rl.resetAt, rl.limit, rl.used);
+		rethrowKnownGitHubErrors(error);
 		await enqueueGitDataSync(authCtx, jobType, cacheKey, jobPayload);
 		return fallback;
 	}
@@ -2834,7 +2870,8 @@ async function fetchPRBundleFromGitHub(
 		if (!prNode) return null;
 
 		return transformGraphQLPRBundle(prNode);
-	} catch {
+	} catch (error) {
+		rethrowKnownGitHubErrors(error);
 		return null;
 	}
 }
@@ -3373,7 +3410,8 @@ export async function enrichPRsWithStats(owner: string, repo: string, prs: { num
 			}
 		}
 		return map;
-	} catch {
+	} catch (error) {
+		rethrowKnownGitHubErrors(error);
 		return new Map<
 			number,
 			{ additions: number; deletions: number; changed_files: number }
@@ -3592,7 +3630,8 @@ export async function getRepoPullRequestsWithStats(
 				: [];
 
 		return { prs, pageInfo, counts, mergedPreview, closedPreview };
-	} catch {
+	} catch (error) {
+		rethrowKnownGitHubErrors(error);
 		return EMPTY_PAGE_RESULT;
 	}
 }
@@ -3645,13 +3684,15 @@ async function fetchCheckStatusForRef(
 
 	try {
 		commitStatuses = await octokit.repos.getCombinedStatusForRef({ owner, repo, ref });
-	} catch {
+	} catch (error) {
+		rethrowKnownGitHubErrors(error);
 		// Token may lack repo status permissions
 	}
 
 	try {
 		checkRuns = await octokit.checks.listForRef({ owner, repo, ref, per_page: 100 });
-	} catch {
+	} catch (error) {
+		rethrowKnownGitHubErrors(error);
 		// Token may lack checks permission (403 for some repos)
 	}
 
@@ -4593,7 +4634,8 @@ export async function getCommitActivity(
 				days: w.days ?? [],
 			}),
 		);
-	} catch {
+	} catch (error) {
+		rethrowKnownGitHubErrors(error);
 		return [];
 	}
 }
@@ -4626,7 +4668,8 @@ export async function getCodeFrequency(owner: string, repo: string): Promise<Cod
 			additions: entry[1] ?? 0,
 			deletions: Math.abs(entry[2] ?? 0),
 		}));
-	} catch {
+	} catch (error) {
+		rethrowKnownGitHubErrors(error);
 		return [];
 	}
 }
@@ -4661,7 +4704,8 @@ export async function getWeeklyParticipation(
 			all: data.all ?? [],
 			owner: data.owner ?? [],
 		};
-	} catch {
+	} catch (error) {
+		rethrowKnownGitHubErrors(error);
 		return null;
 	}
 }
@@ -4673,7 +4717,8 @@ export async function getLanguages(owner: string, repo: string): Promise<Record<
 	try {
 		const response = await octokit.repos.listLanguages({ owner, repo });
 		return response.data ?? {};
-	} catch {
+	} catch (error) {
+		rethrowKnownGitHubErrors(error);
 		return {};
 	}
 }
@@ -4802,7 +4847,16 @@ async function fetchRepoPageDataGraphQL(
 		body: JSON.stringify({ query, variables: { owner, repo } }),
 	});
 
-	if (!response.ok) throw new Error(`GraphQL request failed: ${response.status}`);
+	if (!response.ok) {
+		if (response.status === 403) {
+			const text = await response.text().catch(() => "");
+			if (text.includes("OAuth App access restrictions")) {
+				const match = text.match(/`([^`]+)` organization/);
+				throw new GitHubOAuthRestrictedError(match?.[1] ?? owner);
+			}
+		}
+		throw new Error(`GraphQL request failed: ${response.status}`);
+	}
 	const json = await response.json();
 
 	if (json.errors?.length) {
@@ -4816,6 +4870,9 @@ async function fetchRepoPageDataGraphQL(
 				`[fetchRepoPageDataGraphQL] GitHub API error for ${owner}/${repo}:`,
 				errorMessages,
 			);
+			if (errorMessages.includes("OAuth App access restrictions")) {
+				throw new GitHubOAuthRestrictedError(owner);
+			}
 			throw new Error(errorMessages);
 		}
 	}
@@ -4978,7 +5035,8 @@ export async function getRepoEvents(owner: string, repo: string, perPage = 30) {
 			per_page: perPage,
 		});
 		return data;
-	} catch {
+	} catch (error) {
+		rethrowKnownGitHubErrors(error);
 		return [];
 	}
 }
@@ -5092,23 +5150,33 @@ export async function getRepoCommits(
 ) {
 	const octokit = await getOctokit();
 	if (!octokit) return [];
-	const { data } = await octokit.repos.listCommits({
-		owner,
-		repo,
-		sha,
-		per_page: perPage,
-		page,
-		...(since ? { since } : {}),
-		...(until ? { until } : {}),
-	});
-	return data;
+	try {
+		const { data } = await octokit.repos.listCommits({
+			owner,
+			repo,
+			sha,
+			per_page: perPage,
+			page,
+			...(since ? { since } : {}),
+			...(until ? { until } : {}),
+		});
+		return data;
+	} catch (error) {
+		rethrowKnownGitHubErrors(error);
+		throw error;
+	}
 }
 
 export async function getCommit(owner: string, repo: string, ref: string) {
 	const octokit = await getOctokit();
 	if (!octokit) return null;
-	const { data } = await octokit.repos.getCommit({ owner, repo, ref });
-	return data;
+	try {
+		const { data } = await octokit.repos.getCommit({ owner, repo, ref });
+		return data;
+	} catch (error) {
+		rethrowKnownGitHubErrors(error);
+		throw error;
+	}
 }
 
 export interface AuthorDossierResult {

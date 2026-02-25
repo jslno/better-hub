@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useGlobalChatOptional } from "@/components/shared/global-chat-provider";
 import { authClient } from "@/lib/auth-client";
+import { starRepo } from "@/app/(app)/repos/actions";
 
 interface OnboardingOverlayProps {
 	userName: string;
@@ -17,6 +18,8 @@ interface OnboardingOverlayProps {
 	followers: number;
 	createdAt: string;
 	onboardingDone: boolean;
+	initialStarredAuth?: boolean;
+	initialStarredHub?: boolean;
 }
 
 const GHOST_WELCOME_USER = "Hey Ghost! I just got here. What can you help me with?";
@@ -42,10 +45,15 @@ export function OnboardingOverlay({
 	userName,
 	userAvatar,
 	onboardingDone,
+	initialStarredAuth = false,
+	initialStarredHub = false,
 }: OnboardingOverlayProps) {
 	const [mounted, setMounted] = useState(false);
 	const [visible, setVisible] = useState(false);
 	const [exiting, setExiting] = useState(false);
+	const [starredAuth, setStarredAuth] = useState(initialStarredAuth);
+	const [starredHub, setStarredHub] = useState(initialStarredHub);
+	const [isPending, startTransition] = useTransition();
 	const globalChat = useGlobalChatOptional();
 	const ghostOpenedRef = useRef(false);
 
@@ -70,14 +78,12 @@ export function OnboardingOverlay({
 		if (globalChat && !ghostOpenedRef.current) {
 			ghostOpenedRef.current = true;
 			globalChat.toggleChat();
-			// Small delay so the panel opens, then inject with fake "thinking" pause
 			setTimeout(() => {
 				window.dispatchEvent(
 					new CustomEvent("ghost-welcome-inject", {
 						detail: {
 							userMessage: GHOST_WELCOME_USER,
 							assistantMessage: GHOST_WELCOME_RESPONSE,
-							// Chat component will show a brief loading state before revealing
 							simulateDelay: 1200,
 						},
 					}),
@@ -91,7 +97,21 @@ export function OnboardingOverlay({
 		}, 500);
 	}, [globalChat, markDone]);
 
-	// Enter to dismiss
+	const handleStarAuth = useCallback(() => {
+		setStarredAuth(true);
+		startTransition(async () => {
+			await starRepo("better-auth", "better-auth");
+		});
+	}, []);
+
+	const handleStarHub = useCallback(() => {
+		setStarredHub(true);
+		startTransition(async () => {
+			await starRepo("better-auth", "better-hub");
+		});
+	}, []);
+
+	// Enter/Escape to dismiss
 	useEffect(() => {
 		if (!visible) return;
 		const handler = (e: KeyboardEvent) => {
@@ -237,11 +257,62 @@ export function OnboardingOverlay({
 							opens Ghost, a super helpful AI assistant.
 						</p>
 
-						<p className="text-[13px] sm:text-[14px] text-white/50 leading-[1.8] sm:leading-[1.85] mt-4 ob-fade-up-d3">
-							Hope you like it.
+						<p className="text-[13px] sm:text-[14px] text-white/40 leading-[1.8] sm:leading-[1.85] mt-4 ob-fade-up-d3">
+							Hope you like it!
 						</p>
 
-						<p className="text-[13px] sm:text-[14px] text-white/40 mt-4 ob-fade-up-d5">
+						<div className="flex items-center gap-2.5 mt-4 ob-fade-up-d5">
+							<button
+								onClick={handleStarAuth}
+								disabled={starredAuth || isPending}
+								className={cn(
+									"inline-flex items-center gap-2 px-3.5 py-1.5 rounded-sm text-[12px] font-medium transition-all duration-300 cursor-pointer",
+									starredAuth
+										? "bg-warning/20 text-warning border border-warning/30"
+										: "bg-white/10 text-white/70 border border-white/15 hover:bg-white/15 hover:text-white",
+									isPending &&
+										!starredAuth &&
+										"opacity-60 pointer-events-none",
+								)}
+							>
+								<Star
+									className={cn(
+										"w-3.5 h-3.5",
+										starredAuth &&
+											"fill-current",
+									)}
+								/>
+								{starredAuth
+									? "Starred!"
+									: "better-auth"}
+							</button>
+							<button
+								onClick={handleStarHub}
+								disabled={starredHub || isPending}
+								className={cn(
+									"inline-flex items-center gap-2 px-3.5 py-1.5 rounded-sm text-[12px] font-medium transition-all duration-300 cursor-pointer",
+									starredHub
+										? "bg-warning/20 text-warning border border-warning/30"
+										: "bg-white/10 text-white/70 border border-white/15 hover:bg-white/15 hover:text-white",
+									isPending &&
+										!starredHub &&
+										"opacity-60 pointer-events-none",
+								)}
+							>
+								<Star
+									className={cn(
+										"w-3.5 h-3.5",
+										starredHub &&
+											"fill-current",
+									)}
+								/>
+								{starredHub
+									? "Starred!"
+									: "better-hub"}
+							</button>
+						</div>
+
+						<p className="text-[13px] sm:text-[14px] text-white/40 mt-5 ob-fade-up-d5">
 							— Bereket
 						</p>
 

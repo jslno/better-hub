@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Gauge, RefreshCw, Github, Clock, Zap } from "lucide-react";
+import { Gauge, RefreshCw, Github, Clock, Zap, ShieldAlert, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 function parseRateLimitFromDigest(message: string) {
@@ -13,6 +13,20 @@ function parseRateLimitFromDigest(message: string) {
 		return true;
 	}
 	return false;
+}
+
+function parseOAuthRestriction(error: Error & { digest?: string }): string | null {
+	// Check digest first (works in production where error.message is stripped)
+	const digest = error.digest ?? "";
+	if (digest.startsWith("GITHUB_OAUTH_RESTRICTED:")) {
+		return digest.split(":")[1] || "this organization";
+	}
+	// Fallback: check message (works in development)
+	if (error.message.includes("OAuth App access restrictions")) {
+		const match = error.message.match(/The (\S+) organization/i);
+		return match?.[1] ?? "this organization";
+	}
+	return null;
 }
 
 function useCountdown(resetAt: number) {
@@ -37,6 +51,51 @@ function formatTime(seconds: number) {
 	const m = Math.floor(seconds / 60);
 	const s = seconds % 60;
 	return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+}
+
+function OAuthRestrictedUI({ org, reset }: { org: string; reset: () => void }) {
+	return (
+		<div className="flex flex-col items-center justify-center flex-1 px-4">
+			<div className="w-full max-w-md space-y-6 text-center">
+				<div className="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center mx-auto">
+					<ShieldAlert className="w-6 h-6 text-amber-400" />
+				</div>
+				<div className="space-y-2">
+					<h1 className="text-lg font-medium tracking-tight">
+						Access Restricted
+					</h1>
+					<p className="text-sm text-muted-foreground/60 leading-relaxed">
+						The{" "}
+						<span className="font-medium text-foreground">
+							{org}
+						</span>{" "}
+						organization has enabled OAuth App access
+						restrictions. To view this content, an organization
+						admin needs to approve this app, or you can view it
+						directly on GitHub.
+					</p>
+				</div>
+				<div className="flex items-center justify-center gap-3">
+					<button
+						onClick={reset}
+						className="flex items-center gap-2 px-4 py-2 text-xs font-medium border border-border rounded-lg hover:bg-muted/40 dark:hover:bg-white/3 transition-colors cursor-pointer"
+					>
+						<RefreshCw className="w-3.5 h-3.5" />
+						Try again
+					</button>
+					<a
+						href="https://docs.github.com/en/organizations/managing-oauth-access-to-your-organizations-data/approving-oauth-apps-for-your-organization"
+						target="_blank"
+						rel="noopener noreferrer"
+						className="flex items-center gap-2 px-4 py-2 text-xs font-medium border border-border rounded-lg hover:bg-muted/40 dark:hover:bg-white/3 transition-colors"
+					>
+						<ExternalLink className="w-3.5 h-3.5" />
+						Learn more
+					</a>
+				</div>
+			</div>
+		</div>
+	);
 }
 
 function RateLimitUI({ reset }: { reset: () => void }) {
@@ -216,6 +275,11 @@ export default function ErrorPage({
 
 	if (isRateLimit) {
 		return <RateLimitUI reset={reset} />;
+	}
+
+	const oauthOrg = parseOAuthRestriction(error);
+	if (oauthOrg) {
+		return <OAuthRestrictedUI org={oauthOrg} reset={reset} />;
 	}
 
 	return <GenericErrorUI error={error} reset={reset} />;
