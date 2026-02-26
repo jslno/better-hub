@@ -249,6 +249,7 @@ export async function uploadImage(
 	owner: string,
 	repo: string,
 	file: File,
+	type: "issue" | "pull" = "issue",
 ): Promise<UploadImageResult> {
 	const octokit = await getOctokit();
 	if (!octokit) return { success: false, error: "Not authenticated" };
@@ -262,7 +263,7 @@ export async function uploadImage(
 		const timestamp = Date.now();
 		const randomId = Math.random().toString(36).substring(2, 10);
 		const ext = file.name.split(".").pop()?.toLowerCase() || "png";
-		const filename = `issue-upload-${timestamp}-${randomId}.${ext}`;
+		const filename = `${type}-upload-${timestamp}-${randomId}.${ext}`;
 
 		// Get the default branch first
 		const { data: repoData } = await octokit.repos.get({ owner, repo });
@@ -278,7 +279,7 @@ export async function uploadImage(
 				owner,
 				repo,
 				path,
-				message: `Upload image for issue: ${filename}`,
+				message: `Upload image for ${type}: ${filename}`,
 				content: base64Content,
 				branch: defaultBranch,
 			});
