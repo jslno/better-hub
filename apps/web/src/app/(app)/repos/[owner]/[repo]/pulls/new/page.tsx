@@ -39,6 +39,12 @@ import {
 } from "./actions";
 import { useMutationEvents } from "@/components/shared/mutation-event-provider";
 import { PRDiffList } from "@/components/pr/pr-diff-list";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 function branchKey(b: BranchInfo, repoOwner: string) {
 	return b.owner === repoOwner ? b.name : `${b.owner}:${b.name}`;
@@ -180,6 +186,68 @@ function BranchPicker({
 	);
 }
 
+function SubmitButtonGroup({
+	canSubmit,
+	isPending,
+	onSubmit,
+}: {
+	canSubmit: boolean;
+	isPending: boolean;
+	onSubmit: (draft?: boolean) => void;
+}) {
+	return (
+		<div className="inline-flex">
+			<button
+				onClick={() => onSubmit(false)}
+				disabled={isPending || !canSubmit}
+				className={cn(
+					"flex items-center gap-1.5 px-5 py-2 text-[12px] font-medium rounded-l-md transition-all cursor-pointer",
+					canSubmit
+						? "bg-green-600 hover:bg-green-700 text-white"
+						: "bg-muted dark:bg-white/5 text-muted-foreground/30 cursor-not-allowed",
+					"disabled:opacity-50 disabled:cursor-not-allowed",
+				)}
+			>
+				{isPending ? (
+					<Loader2 className="w-3.5 h-3.5 animate-spin" />
+				) : (
+					<CornerDownLeft className="w-3.5 h-3.5 opacity-60" />
+				)}
+				Create pull request
+			</button>
+			<DropdownMenu>
+				<DropdownMenuTrigger asChild>
+					<button
+						disabled={isPending || !canSubmit}
+						className={cn(
+							"flex items-center px-2 py-2 border-l transition-all cursor-pointer rounded-r-md",
+							canSubmit
+								? "bg-green-600 hover:bg-green-700 text-white border-green-700"
+								: "bg-muted dark:bg-white/5 text-muted-foreground/30 border-border/30 cursor-not-allowed",
+							"disabled:opacity-50 disabled:cursor-not-allowed",
+						)}
+					>
+						<ChevronDown className="w-3.5 h-3.5" />
+					</button>
+				</DropdownMenuTrigger>
+				<DropdownMenuContent align="end" className="min-w-[200px]">
+					<DropdownMenuItem
+						onClick={() => onSubmit(true)}
+						className="flex flex-col items-start gap-0.5 cursor-pointer"
+					>
+						<span className="font-medium text-[12px]">
+							Create as draft
+						</span>
+						<span className="text-[10px] text-muted-foreground/50">
+							Cannot be merged until marked ready
+						</span>
+					</DropdownMenuItem>
+				</DropdownMenuContent>
+			</DropdownMenu>
+		</div>
+	);
+}
+
 function CompareStats({ data }: { data: CompareResult }) {
 	const totalAdditions = data.files.reduce((s, f) => s + f.additions, 0);
 	const totalDeletions = data.files.reduce((s, f) => s + f.deletions, 0);
@@ -262,7 +330,7 @@ export default function NewPullRequestPage() {
 		return () => controller.abort();
 	}, [owner, repo, base, head]);
 
-	const handleSubmit = () => {
+	const handleSubmit = (draft = false) => {
 		if (!title.trim()) {
 			setError("Title is required");
 			return;
@@ -288,6 +356,7 @@ export default function NewPullRequestPage() {
 				body.trim(),
 				head,
 				base,
+				draft,
 			);
 			if (result.success && result.number) {
 				emit({
@@ -580,24 +649,11 @@ export default function NewPullRequestPage() {
 									: "Ctrl"}
 								+Enter to submit
 							</span>
-							<button
-								onClick={handleSubmit}
-								disabled={isPending || !canSubmit}
-								className={cn(
-									"flex items-center gap-1.5 px-5 py-2 text-[12px] font-medium rounded-md transition-all cursor-pointer",
-									canSubmit
-										? "bg-green-600 hover:bg-green-700 text-white"
-										: "bg-muted dark:bg-white/5 text-muted-foreground/30 cursor-not-allowed",
-									"disabled:opacity-50 disabled:cursor-not-allowed",
-								)}
-							>
-								{isPending ? (
-									<Loader2 className="w-3.5 h-3.5 animate-spin" />
-								) : (
-									<CornerDownLeft className="w-3.5 h-3.5 opacity-60" />
-								)}
-								Create pull request
-							</button>
+							<SubmitButtonGroup
+								canSubmit={!!canSubmit}
+								isPending={isPending}
+								onSubmit={handleSubmit}
+							/>
 						</div>
 					</div>
 

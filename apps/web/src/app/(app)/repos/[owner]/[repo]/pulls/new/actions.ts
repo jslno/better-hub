@@ -83,6 +83,7 @@ export async function createPullRequest(
 	body: string,
 	head: string,
 	base: string,
+	draft?: boolean,
 ): Promise<{ success: boolean; number?: number; error?: string }> {
 	const octokit = await getOctokit();
 	if (!octokit) return { success: false, error: "Not authenticated" };
@@ -95,6 +96,7 @@ export async function createPullRequest(
 			body: body || undefined,
 			head,
 			base,
+			draft: draft ?? false,
 		});
 
 		await invalidateRepoPullRequestsCache(owner, repo);
