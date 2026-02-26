@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { ChevronDown, ChevronUp, ArrowRight, FilePlus2, FileX2, FileEdit } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { parseDiffPatch, type DiffLine } from "@/lib/github-utils";
+import type { SyntaxToken } from "@/lib/shiki";
 
 interface DiffFile {
 	filename: string;
@@ -61,7 +62,13 @@ function DiffStats({ additions, deletions }: { additions: number; deletions: num
 	);
 }
 
-function FileDiffView({ file }: { file: DiffFile }) {
+function FileDiffView({
+	file,
+	fileHighlightData,
+}: {
+	file: DiffFile;
+	fileHighlightData?: Record<string, SyntaxToken[]>;
+}) {
 	const [collapsed, setCollapsed] = useState(false);
 	const lines = useMemo(() => (file.patch ? parseDiffPatch(file.patch) : []), [file.patch]);
 
@@ -97,14 +104,55 @@ function FileDiffView({ file }: { file: DiffFile }) {
 			{!collapsed && (
 				<div className="overflow-x-auto">
 					{lines.length > 0 ? (
-						<table className="w-full text-[12px] font-mono border-collapse">
+						<table className="w-full text-[12.5px] font-mono border-collapse leading-[20px]">
 							<tbody>
-								{lines.map((line, i) => (
-									<DiffLineRow
-										key={i}
-										line={line}
-									/>
-								))}
+								{lines.map((line, i) => {
+									let tokens:
+										| SyntaxToken[]
+										| undefined;
+									if (fileHighlightData) {
+										if (
+											line.type ===
+												"remove" &&
+											line.oldLineNumber !==
+												undefined
+										) {
+											tokens =
+												fileHighlightData[
+													`R-${line.oldLineNumber}`
+												];
+										} else if (
+											line.type ===
+												"add" &&
+											line.newLineNumber !==
+												undefined
+										) {
+											tokens =
+												fileHighlightData[
+													`A-${line.newLineNumber}`
+												];
+										} else if (
+											line.type ===
+												"context" &&
+											line.newLineNumber !==
+												undefined
+										) {
+											tokens =
+												fileHighlightData[
+													`C-${line.newLineNumber}`
+												];
+										}
+									}
+									return (
+										<DiffLineRow
+											key={i}
+											line={line}
+											syntaxTokens={
+												tokens
+											}
+										/>
+									);
+								})}
 							</tbody>
 						</table>
 					) : (
@@ -120,7 +168,7 @@ function FileDiffView({ file }: { file: DiffFile }) {
 	);
 }
 
-function DiffLineRow({ line }: { line: DiffLine }) {
+function DiffLineRow({ line, syntaxTokens }: { line: DiffLine; syntaxTokens?: SyntaxToken[] }) {
 	const isHeader = line.type === "header";
 	const isAdd = line.type === "add";
 	const isDel = line.type === "remove";
@@ -140,43 +188,63 @@ function DiffLineRow({ line }: { line: DiffLine }) {
 	}
 
 	return (
-		<tr
-			className={cn(
-				isAdd && "bg-green-500/8 dark:bg-green-500/10",
-				isDel && "bg-red-500/8 dark:bg-red-500/10",
-			)}
-		>
+		<tr className={cn(isAdd && "bg-diff-add-bg", isDel && "bg-diff-del-bg")}>
 			<td
 				className={cn(
 					"w-[1px] px-2 py-0 text-right select-none border-r border-border/20 dark:border-white/5",
 					isDel
-						? "text-red-400/40"
+						? "text-destructive/50"
 						: isAdd
-							? "text-green-400/40"
+							? "text-success/50"
 							: "text-muted-foreground/20",
 				)}
 			>
 				{lineNum ?? ""}
 			</td>
 			<td className="px-3 py-0 whitespace-pre">
-				<span
-					className={cn(
-						isAdd && "text-green-700 dark:text-green-300",
-						isDel && "text-red-700 dark:text-red-300",
-					)}
-				>
-					{line.content}
-				</span>
+				{syntaxTokens ? (
+					<span className="diff-syntax">
+						{syntaxTokens.map((t, ti) => (
+							<span
+								key={ti}
+								style={{
+									color: `light-dark(${t.lightColor}, ${t.darkColor})`,
+								}}
+							>
+								{t.text}
+							</span>
+						))}
+					</span>
+				) : (
+					<span
+						className={cn(
+							isAdd && "text-diff-add-text",
+							isDel && "text-diff-del-text",
+						)}
+					>
+						{line.content}
+					</span>
+				)}
 			</td>
 		</tr>
 	);
 }
 
-export function PRDiffList({ files }: { files: DiffFile[] }) {
+export function PRDiffList({
+	files,
+	highlightData,
+}: {
+	files: DiffFile[];
+	highlightData?: Record<string, Record<string, SyntaxToken[]>>;
+}) {
 	return (
 		<div className="space-y-3">
 			{files.map((file) => (
-				<FileDiffView key={file.filename} file={file} />
+				<FileDiffView
+					key={file.filename}
+					file={file}
+					fileHighlightData={highlightData?.[file.filename]}
+				/>
 			))}
 		</div>
 	);

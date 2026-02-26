@@ -4,6 +4,7 @@ import { getOctokit, invalidateRepoPullRequestsCache } from "@/lib/github";
 import { getErrorMessage } from "@/lib/utils";
 import { revalidatePath } from "next/cache";
 import { invalidateRepoCache } from "@/lib/repo-data-cache-vc";
+import { highlightDiffLines, type SyntaxToken } from "@/lib/shiki";
 
 export interface CompareFile {
 	filename: string;
@@ -194,4 +195,22 @@ export async function fetchBranches(owner: string, repo: string): Promise<Branch
 	} catch {
 		return [];
 	}
+}
+
+export async function highlightDiffFiles(
+	files: { filename: string; patch?: string }[],
+): Promise<Record<string, Record<string, SyntaxToken[]>>> {
+	const result: Record<string, Record<string, SyntaxToken[]>> = {};
+
+	await Promise.allSettled(
+		files.map(async (file) => {
+			if (!file.patch) return;
+			const tokens = await highlightDiffLines(file.patch, file.filename);
+			if (Object.keys(tokens).length > 0) {
+				result[file.filename] = tokens;
+			}
+		}),
+	);
+
+	return result;
 }

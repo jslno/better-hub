@@ -34,9 +34,11 @@ import {
 	createPullRequest,
 	compareBranches,
 	fetchBranches,
+	highlightDiffFiles,
 	type CompareResult,
 	type BranchInfo,
 } from "./actions";
+import type { SyntaxToken } from "@/lib/shiki";
 import { useMutationEvents } from "@/components/shared/mutation-event-provider";
 import { PRDiffList } from "@/components/pr/pr-diff-list";
 import {
@@ -291,6 +293,10 @@ export default function NewPullRequestPage() {
 	const [compare, setCompare] = useState<CompareResult | null>(null);
 	const [compareLoading, setCompareLoading] = useState(false);
 	const [compareError, setCompareError] = useState<string | null>(null);
+	const [highlightData, setHighlightData] = useState<
+		Record<string, Record<string, SyntaxToken[]>>
+	>({});
+	const [highlightLoading, setHighlightLoading] = useState(false);
 
 	const [error, setError] = useState<string | null>(null);
 	const [isPending, startTransition] = useTransition();
@@ -309,11 +315,14 @@ export default function NewPullRequestPage() {
 		if (!base || !head || base === head) {
 			setCompare(null);
 			setCompareError(null);
+			setHighlightData({});
 			return;
 		}
 
 		setCompareLoading(true);
 		setCompareError(null);
+		setHighlightData({});
+		setHighlightLoading(false);
 		const controller = new AbortController();
 
 		compareBranches(owner, repo, base, head).then((result) => {
@@ -321,6 +330,15 @@ export default function NewPullRequestPage() {
 			setCompareLoading(false);
 			if (result.success && result.data) {
 				setCompare(result.data);
+				if (result.data.files.some((f) => f.patch)) {
+					setHighlightLoading(true);
+					highlightDiffFiles(result.data.files).then((hl) => {
+						if (!controller.signal.aborted) {
+							setHighlightData(hl);
+							setHighlightLoading(false);
+						}
+					});
+				}
 			} else {
 				setCompare(null);
 				setCompareError(result.error || "Failed to compare branches");
@@ -716,9 +734,53 @@ export default function NewPullRequestPage() {
 						</div>
 					</div>
 
-					{compare.files.length > 0 && (
-						<PRDiffList files={compare.files} />
-					)}
+					{compare.files.length > 0 &&
+						(highlightLoading ? (
+							<div className="space-y-3">
+								{compare.files
+									.slice(0, 3)
+									.map((f) => (
+										<div
+											key={
+												f.filename
+											}
+											className="border border-border/50 dark:border-white/8 rounded-lg overflow-hidden"
+										>
+											<div className="flex items-center gap-2 px-3 py-2 bg-muted/30 dark:bg-white/[0.02] border-b border-border/30 dark:border-white/5">
+												<div className="w-3.5 h-3.5 rounded bg-muted/50 animate-pulse" />
+												<div className="h-3 w-48 rounded bg-muted/50 animate-pulse" />
+											</div>
+											<div className="px-3 py-2 space-y-1.5">
+												{Array.from(
+													{
+														length: 6,
+													},
+												).map(
+													(
+														_,
+														i,
+													) => (
+														<div
+															key={
+																i
+															}
+															className="h-3 rounded bg-muted/30 animate-pulse"
+															style={{
+																width: `${55 + Math.random() * 40}%`,
+															}}
+														/>
+													),
+												)}
+											</div>
+										</div>
+									))}
+							</div>
+						) : (
+							<PRDiffList
+								files={compare.files}
+								highlightData={highlightData}
+							/>
+						))}
 				</>
 			)}
 
