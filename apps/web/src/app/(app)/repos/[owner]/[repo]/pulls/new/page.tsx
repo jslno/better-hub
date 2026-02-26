@@ -203,7 +203,7 @@ function SubmitButtonGroup({
 				onClick={() => onSubmit(false)}
 				disabled={isPending || !canSubmit}
 				className={cn(
-					"flex items-center gap-1.5 px-5 py-2 text-[12px] font-medium rounded-l-md transition-all cursor-pointer",
+					"flex items-center gap-1.5 px-5 py-1.5 text-[12px] font-medium rounded-l-md transition-all cursor-pointer",
 					canSubmit
 						? "bg-green-600 hover:bg-green-700 text-white"
 						: "bg-muted dark:bg-white/5 text-muted-foreground/30 cursor-not-allowed",
@@ -222,7 +222,7 @@ function SubmitButtonGroup({
 					<button
 						disabled={isPending || !canSubmit}
 						className={cn(
-							"flex items-center px-2 py-2 border-l transition-all cursor-pointer rounded-r-md",
+							"flex items-center px-2 py-1.5 border-l transition-all cursor-pointer rounded-r-md",
 							canSubmit
 								? "bg-green-600 hover:bg-green-700 text-white border-green-700"
 								: "bg-muted dark:bg-white/5 text-muted-foreground/30 border-border/30 cursor-not-allowed",
