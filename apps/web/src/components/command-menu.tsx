@@ -1095,24 +1095,38 @@ export function CommandMenu() {
 	}, [search, topUserRepos, filteredUserRepos, dedupedGithubResults, router]);
 
 	// --- Theme mode items ---
-	const filteredThemes = useMemo(() => {
-		if (mode !== "theme") return colorThemes;
-		if (!search.trim()) return colorThemes;
-		const s = search.toLowerCase();
-		return colorThemes.filter(
-			(t) =>
+	const { regularThemes, brandedThemes } = useMemo(() => {
+		const filterFn = (t: (typeof colorThemes)[0]) => {
+			if (!search.trim()) return true;
+			const s = search.toLowerCase();
+			return (
 				t.name.toLowerCase().includes(s) ||
-				t.description.toLowerCase().includes(s),
-		);
+				t.description.toLowerCase().includes(s)
+			);
+		};
+
+		const regular: typeof colorThemes = [];
+		const branded: typeof colorThemes = [];
+
+		for (const theme of colorThemes) {
+			if (!filterFn(theme)) continue;
+			if (theme.icon && theme.id !== "better-auth") {
+				branded.push(theme);
+			} else {
+				regular.push(theme);
+			}
+		}
+
+		return { regularThemes: regular, brandedThemes: branded };
 	}, [mode, search, colorThemes]);
 
 	const themeItems = useMemo(() => {
-		return filteredThemes.map((t) => ({
+		return [...regularThemes, ...brandedThemes].map((t) => ({
 			id: `theme-${t.id}`,
 			action: () => setColorTheme(t.id),
 			keepOpen: true,
 		}));
-	}, [filteredThemes, setColorTheme]);
+	}, [regularThemes, brandedThemes, setColorTheme]);
 
 	// --- Accounts mode items ---
 	const handleSwitchAccount = useCallback(
@@ -2051,10 +2065,10 @@ export function CommandMenu() {
 												</span>
 											</button>
 										</div>
-										{filteredThemes.length >
+										{regularThemes.length >
 											0 && (
 											<CommandGroup title="Themes">
-												{filteredThemes.map(
+												{regularThemes.map(
 													(
 														theme,
 													) => {
@@ -2126,8 +2140,64 @@ export function CommandMenu() {
 												)}
 											</CommandGroup>
 										)}
+										{brandedThemes.length >
+											0 && (
+											<CommandGroup title="Partner Themes">
+												{brandedThemes.map(
+													(
+														theme,
+													) => {
+														const idx =
+															getNextIndex();
+														const isActive =
+															currentThemeId ===
+															theme.id;
+														return (
+															<CommandItemButton
+																key={
+																	theme.id
+																}
+																index={
+																	idx
+																}
+																selected={
+																	selectedIndex ===
+																	idx
+																}
+																onClick={() =>
+																	setColorTheme(
+																		theme.id,
+																	)
+																}
+															>
+																{theme.icon && (
+																	<div className="min-w-[28px] flex items-center justify-center">
+																		<theme.icon className="size-4 shrink-0" />
+																	</div>
+																)}
+																<span className="text-[13px] text-foreground flex-1">
+																	{
+																		theme.name
+																	}
+																</span>
+																<span className="text-[11px] text-muted-foreground hidden sm:block">
+																	{
+																		theme.description
+																	}
+																</span>
+																{isActive && (
+																	<Check className="size-3.5 text-success shrink-0" />
+																)}
+															</CommandItemButton>
+														);
+													},
+												)}
+											</CommandGroup>
+										)}
 										{hasQuery &&
-											filteredThemes.length ===
+											regularThemes.length ===
+												0 &&
+											brandedThemes.length ===
 												0 && (
 												<div className="py-8 text-center text-sm text-muted-foreground/70">
 													No
