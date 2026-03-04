@@ -20,6 +20,7 @@ import { signIn, signOut } from "@/lib/auth-client";
 import { SCOPE_GROUPS, scopesToGroupIds } from "@/lib/github-scopes";
 import type { UserSettings } from "@/lib/user-settings-store";
 import type { GitHubProfile } from "../settings-dialog";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface AccountTabProps {
 	user: {
@@ -30,34 +31,6 @@ interface AccountTabProps {
 	settings: UserSettings;
 	onUpdate: (updates: Partial<UserSettings>) => Promise<void>;
 	githubProfile: GitHubProfile;
-}
-
-function InfoPopover({ text, children }: { text: string; children: React.ReactNode }) {
-	const [open, setOpen] = useState(false);
-	const timeout = useRef<ReturnType<typeof setTimeout>>(undefined);
-
-	const show = useCallback(() => {
-		clearTimeout(timeout.current);
-		setOpen(true);
-	}, []);
-
-	const hide = useCallback(() => {
-		timeout.current = setTimeout(() => setOpen(false), 150);
-	}, []);
-
-	useEffect(() => () => clearTimeout(timeout.current), []);
-
-	return (
-		<div className="relative inline-flex" onMouseEnter={show} onMouseLeave={hide}>
-			{children}
-			{open && (
-				<div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 px-3 py-2 rounded-md bg-foreground text-background text-[11px] leading-relaxed shadow-lg z-50 pointer-events-none">
-					{text}
-					<div className="absolute top-full left-1/2 -translate-x-1/2 -mt-px border-4 border-transparent border-t-foreground" />
-				</div>
-			)}
-		</div>
-	);
 }
 
 function formatCount(n: number): string {
@@ -375,22 +348,31 @@ export function AccountTab({ user, settings, onUpdate, githubProfile }: AccountT
 													<span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
 												)}
 										</button>
-										<InfoPopover
-											text={
-												group.reason
-											}
-										>
-											<span
-												className={cn(
-													"inline-flex items-center pr-2 pl-1 border-l transition-colors",
-													isOn
-														? "border-foreground/15 text-foreground/30 hover:text-foreground/60"
-														: "border-foreground/10 text-foreground/20 hover:text-foreground/50",
-												)}
+										<Tooltip>
+											<TooltipTrigger
+												asChild
 											>
-												<Info className="w-3 h-3" />
-											</span>
-										</InfoPopover>
+												<span
+													className={cn(
+														"inline-flex items-center pr-2 pl-1 border-l transition-colors cursor-default",
+														isOn
+															? "border-foreground/15 text-foreground/30 hover:text-foreground/60"
+															: "border-foreground/10 text-foreground/20 hover:text-foreground/50",
+													)}
+												>
+													<Info className="w-3 h-3" />
+												</span>
+											</TooltipTrigger>
+											<TooltipContent
+												withArrow
+												variant="primary"
+												className="max-w-56 text-[11px] leading-relaxed"
+											>
+												{
+													group.reason
+												}
+											</TooltipContent>
+										</Tooltip>
 									</span>
 								);
 							})}

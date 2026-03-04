@@ -13,46 +13,19 @@ import { InfoIcon } from "@/components/shared/icons/info-icon";
 import { KeyIcon } from "@/components/shared/icons/key-icon";
 import { LoadingSpinner } from "@/components/shared/icons/loading-spinner";
 import { LockIcon } from "@/components/shared/icons/lock-icon";
-
-/* ── Component ── */
-
-function InfoPopover({ text, children }: { text: string; children: React.ReactNode }) {
-	const [visible, setVisible] = useState(false);
-	const timeout = useRef<ReturnType<typeof setTimeout>>(undefined);
-
-	const show = useCallback(() => {
-		clearTimeout(timeout.current);
-		timeout.current = setTimeout(() => setVisible(true), 400);
-	}, []);
-
-	const hide = useCallback(() => {
-		clearTimeout(timeout.current);
-		setVisible(false);
-	}, []);
-
-	useEffect(() => () => clearTimeout(timeout.current), []);
-
-	return (
-		<div className="relative inline-flex" onMouseEnter={show} onMouseLeave={hide}>
-			{children}
-			<div
-				className={cn(
-					"absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 px-3 py-2 rounded-md bg-foreground text-background text-[11px] leading-relaxed shadow-lg z-50 pointer-events-none transition-all duration-200 ease-out",
-					visible
-						? "opacity-100 translate-y-0"
-						: "opacity-0 translate-y-1 pointer-events-none",
-				)}
-			>
-				{text}
-				<div className="absolute top-full left-1/2 -translate-x-1/2 -mt-px border-4 border-transparent border-t-foreground" />
-			</div>
-		</div>
-	);
-}
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 /* ── Component ── */
 
 export function LoginButton({ redirectTo }: { redirectTo?: string }) {
+	return (
+		<TooltipProvider>
+			<LoginButtonInner redirectTo={redirectTo} />
+		</TooltipProvider>
+	);
+}
+
+function LoginButtonInner({ redirectTo }: { redirectTo?: string }) {
 	const router = useRouter();
 	const [mode, setMode] = useState<"oauth" | "pat">("oauth");
 	const [loading, setLoading] = useState(false);
@@ -222,22 +195,31 @@ export function LoginButton({ redirectTo }: { redirectTo?: string }) {
 															group.label
 														}
 													</button>
-													<InfoPopover
-														text={
-															group.reason
-														}
-													>
-														<span
-															className={cn(
-																"inline-flex items-center pr-2 pl-1 border-l transition-colors",
-																isOn
-																	? "border-foreground/15 text-foreground/30 hover:text-foreground/60"
-																	: "border-foreground/10 text-foreground/20 hover:text-foreground/50",
-															)}
+													<Tooltip>
+														<TooltipTrigger
+															asChild
 														>
-															<InfoIcon className="w-3 h-3" />
-														</span>
-													</InfoPopover>
+															<span
+																className={cn(
+																	"inline-flex items-center pr-2 pl-1 border-l transition-colors cursor-default",
+																	isOn
+																		? "border-foreground/15 text-foreground/30 hover:text-foreground/60"
+																		: "border-foreground/10 text-foreground/20 hover:text-foreground/50",
+																)}
+															>
+																<InfoIcon className="w-3 h-3" />
+															</span>
+														</TooltipTrigger>
+														<TooltipContent
+															withArrow
+															variant="primary"
+															className="max-w-56 text-[11px] leading-relaxed"
+														>
+															{
+																group.reason
+															}
+														</TooltipContent>
+													</Tooltip>
 												</span>
 											);
 										},
